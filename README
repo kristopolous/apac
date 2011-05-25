@@ -1,0 +1,114 @@
+CONTENTS:
+	INTRO
+	DESCRIPTION
+	BUILD INSTRUCTIONS
+	SPACE REQUIREMENTS
+	NOTES
+
+	        
+
+
+
+
+
+
+
+
+
+ END SECTION 
+---------------
+* * * * *
+* INTRO *
+* * * * *
+Apac is a static webserver.
+
+It is be available from
+	http://qaa.ath.cx/apac.tgz
+or
+	http://i860.sf.net/apac.tgz
+	        
+
+
+
+
+
+
+
+
+
+ END SECTION 
+---------------
+* * * * * * * *
+* DESCRIPTION *
+* * * * * * * *
+Apac supports a subset of HTTP/1.1
+	. if-modified (client side caching)
+	. partial content (continuing)
+	. See ~ line 84 of defines.h for a full list
+	        
+
+
+
+
+
+
+
+
+
+ END SECTION 
+---------------
+* * * * * * * * * * * *
+* BUILD INSTRUCTIONS  *
+* * * * * * * * * * * *
+NON-GNU MAKE (i.e. pmake, BSD make)
+ SOLARIS
+  make solaris [file flag] makefile.nongnu
+  make install
+ OTHER
+  make [file flag] makefile.nongnu
+  make install
+GNU MAKE
+ ANY
+  make
+  make install
+	        
+
+
+
+
+
+
+
+
+
+ END SECTION 
+---------------
+* * * * * * * * * * * *
+* SPACE REQUIREMENTS  *
+* * * * * * * * * * * *
+[File        ][Approx Size][1]
+~/.apac.conf	        200
+~/.apac.mime	      1 100
+apac		     19 000
+---------------------------
+Installed system     32 000
+For build[2]	    207 000
+	        
+
+
+
+
+
+
+
+
+
+ END SECTION 
+---------------
+* * * * *
+* NOTES *
+* * * * *
+[1] In Bytes. Approximate size is an overestimate
+
+[2] This is the amount of space needed for a build
+    from source for the build directory

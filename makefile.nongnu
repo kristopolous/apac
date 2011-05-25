@@ -1,0 +1,14 @@
+ap: server.o magic.o parse.o 
+	$(CC) -c apac.c 
+	$(CC) -o apac apac.o
+solaris:
+	$(CC) -D_SunOS -c server.c
+	$(CC) -D_SunOS -c magic.c
+	$(CC) -D_SunOS -c parse.c
+	$(CC) -D_SunOS -c apac.c
+	$(CC) -o apac apac.o -lsocket
+install:
+	cp ext.mime ~/.apac.mime
+	cp apac /usr/bin
+clean:
+	rm -f core apac *.o
