@@ -526,18 +526,16 @@ short get(char **args, connection*c) {
       *(args[fin - 1] - 1) = 32;
     }
     args[1] = unhtmlit(args[1], args[fin] - args[1], &ret);
-  }
-  else 
-  {
+  } else {
     args[1] = unhtmlit(args[1], args[2] - args[1], &ret);
   }
 
   // Increase size of the buffer if necessary
-  if(ret > rs)
-  {
+  if(ret > rs) {
     rs = ret;
     root = mrealloc(root, rs + strlen(curvhost->docroot) + 10);
   }
+
   memset(root, 0, rs);
   g_mimetype = def;
   g_size = 0;
@@ -549,24 +547,22 @@ short get(char **args, connection*c) {
   query = 0;
   temp = root;
 
-  while(*temp)
-  {
-    if(*temp == '?')
-    {
+  while(*temp) {
+    if(*temp == '?') {
       *temp = 0;
       query = temp + 1;
     }
-    if(query)
-    {
-      if(*temp == '&')
-      {
+
+    if(query) {
+      if(*temp == '&') {
         *temp = 32;
       }
     }
+
     temp++;
   }
-  if(query)
-  {  
+
+  if(query) {  
     query = hex2ascii(query);
   }
   if(mystat(root, &g_dp))//stat fails
@@ -575,27 +571,22 @@ short get(char **args, connection*c) {
   }
 
   // stat is successful, no message has been set
-  if(!msg && mystat(root, &g_dp)==0)
-  {
+  if(!msg && mystat(root, &g_dp)==0) {
     //If we are dealing with a directory  
-    if(g_dp.st_mode & S_IFDIR)
-    { 
+    if(g_dp.st_mode & S_IFDIR) { 
       temp = root + strlen(root) - 1;  //Go to the end of the string and if it's not a '/' make it one
-      if(*temp!='/')
-      {  
+      if(*temp!='/') {  
         *++temp='/';
         msg=MOVED;
         sprintf(data,"<H1>Moved Permanently</H1><a href=%s/>Over here actually</a><br>Apac %s",args[1],VERSION);
-      }
-      else
-      {
+      } else {
         temp++;
-//Put on the default page
+      //Put on the default page
       }
       strcat(root,curvhost->dfault);
-//If the default page isn't there, take it back off
-      if(mystat(root, &g_dp)<0)
-      {
+
+      //If the default page isn't there, take it back off
+      if(mystat(root, &g_dp)<0) {
          *temp=0;  
       }
     }
@@ -616,67 +607,55 @@ iscgi=0;
     }
 #endif
 //This does an if-modified-since
-    if(g_chead[C_IFMD].value && (query == 0))
-    { 
+    if(g_chead[C_IFMD].value && (query == 0)) { 
       tm2  =chrtotm(g_chead[C_IFMD].value);
       tm1  =gmtime(&g_dp.st_mtime);
 
-      if(mktime(tm2) >= mktime(tm1))
-      {
+      if(mktime(tm2) >= mktime(tm1)) {
         msg = NOT_MODIFIED;
       }
     }
   }
-  if(!msg)
-  {
-    if(mystat(root, &g_dp) == 0)  //If the file exists
-    {
+
+  if(!msg) {
+    if(mystat(root, &g_dp) == 0) { //If the file exists
       msg = OK;  
-      if(!(g_dp.st_mode & S_IFDIR))  //If it's not a directory
-      {
+
+      if(!(g_dp.st_mode & S_IFDIR)) { //If it's not a directory
+        
         c->ofd = myopen(root, 0);  //Open it
-        if(c->ofd == -1)  //Couldn't open it
-        {
+
+        if(c->ofd == -1) { //Couldn't open it
           msg = FORBIDDEN;
-        }
-        else
-        {  g_mimetype=getmime(root);  //Get the mime type
+        } else {  
+          g_mimetype=getmime(root);  //Get the mime type
           g_size=g_dp.st_size;  //Set the global size
 
-          if(g_size==0)
-          {
+          if(g_size==0) {
             msg=NO_CONTENT;
 //BUG BUG, if a file is zeroed out and partial content is asked
-          }
-          else      //Look for partial content
-          {
-            if(c->rstart)
-            {
-              if(c->rstart>=g_dp.st_size)  //The range cannot be satisfied
-              {
+          } else  {
+            //Look for partial content
+            if(c->rstart) {
+              if(c->rstart>=g_dp.st_size) { //The range cannot be satisfied
                 msg=REQ_NORANG;
                 close(c->ofd);
                 c->ofd=-1;
-              }
-              else
-              {
+              } else {
                 lseek(c->ofd,c->rstart,SEEK_SET);
                 msg=PARTIAL;
               }
             }
-            if(c->ofd>0)
-            {
+
+            if(c->ofd>0) {
               read(c->ofd,data,MEDSMAL);
             }
           }
         }
-      }
-      else if(curvhost->showdirs)
-      {  
+      } else if(curvhost->showdirs) {  
         dir = opendir((const char*)root);
 
-        if(dir)
-        {  
+        if(dir) {  
           place = scandir(root,&alltoshow,0,alphasort);
           itmp = place;
 
@@ -685,36 +664,32 @@ iscgi=0;
           strncpy(full, root, SMALL);
           ptp = strlen(full);
 //Resizes data structure for large directories
-          if((place * (256+60)) > dsize)
-          {  
-            while( (place * (256+60)) > dsize)
-            {
+          if((place * (256+60)) > dsize) {  
+            while( (place * (256+60)) > dsize) {
               dsize = dsize << 1;  
             }
+
             data = mrealloc(data, dsize);
             memset(data, 0, dsize);
+
           }
+
           sprintf(data,"<H1>%s</H1>",args[1]);
+
           gmt = localtime(&g_dp.st_mtime);
           sprintf(data,"%s<pre>Name\t\t\tLast Modified\tSize<hr color=black height=1><a href=..>Parent Directory</a>\t%02d/%02d %02d:%02d:%02d\t-\n",data,gmt->tm_mon,gmt->tm_mday,gmt->tm_hour,gmt->tm_min,gmt->tm_sec);
 
           chdir(full);
           flag = 1;
-          while(place--)
-          {  
-            if(flag)   
-            {  
-              if(*(*t)->d_name == '.')
-              {
-                if((*((*t)->d_name + 1)) == 0)
-                { 
+
+          while(place--) {  
+            if(flag)   {  
+              if(*(*t)->d_name == '.') {
+                if((*((*t)->d_name + 1)) == 0) { 
                   t++;
                   continue;
-                }
-                else if((*((*t)->d_name + 1)) == '.')
-                {
-                  if(*((*t)->d_name + 2) == 0)
-                  {
+                } else if((*((*t)->d_name + 1)) == '.') {
+                  if(*((*t)->d_name + 2) == 0) {
                     t++;
                     flag=0;
                     continue;
@@ -729,21 +704,18 @@ iscgi=0;
 
             sz = g_dp.st_size;
 
-            while(sz>>10)
-            {
+            while(sz>>10) {
               bpt++;
               sz=sz>>10;
             }
 
             gmt = localtime(&g_dp.st_mtime);
 
-            if(g_dp.st_mode & S_IFDIR)
-            {  
+            if(g_dp.st_mode & S_IFDIR) {  
               sprintf(data,"%s<a href=\"%s/\">",
                 data, (*t)->d_name);
 
-              if((tlen=strlen((*t)->d_name)) > 23)
-              {
+              if((tlen=strlen((*t)->d_name)) > 23) {
                 strcpy((*t)->d_name+21,"..");
                 tlen = 23;
               }
@@ -755,14 +727,11 @@ iscgi=0;
                 ,gmt->tm_hour
                 ,gmt->tm_min
                 ,gmt->tm_sec);
-            }
-            else
-            {
+            } else {
               sprintf(data,"%s<a href=\"%s\">",
                 data, (*t)->d_name);
 
-              if((tlen=strlen((*t)->d_name)) > 23)
-              {
+              if((tlen=strlen((*t)->d_name)) > 23) {
                 strcpy((*t)->d_name+21, "..");
                 tlen = 23;
               }
@@ -782,38 +751,35 @@ iscgi=0;
 
           sprintf(data,"%s</pre><a href=http://qaa.ath.cx/apac.html>Apac</a> Server %s",data,VERSION);
           closedir(dir);
-          while(itmp--)
-          {
+          while(itmp--) {
             free(alltoshow[itmp]);
           }
+
           free(alltoshow);
-        }
-        else
-        {  
+
+        } else {  
           sprintf(data,"<body><font size=+4><B>403</B></font><hr color=black><blockquote><font size=+3>Forbidden</font><br><font size=+2>Unable to access %s</font><br><br><a href=http://qaa.ath.cx/apac.html>Apac</a> Server %s</blockquote>",args[1],VERSION);
           msg = FORBIDDEN;
         }
       }
       else msg=0;
     }
-    if(!msg)
-    {  
+
+    if(!msg) {  
       msg = NOT_FOUND;
       strcpy(root, curvhost->docroot);
       strcat(root, curvhost->error);
 
-      if(!mystat(root, &g_dp))
-      {
+      if(!mystat(root, &g_dp)) {
         c->ofd = myopen(root,0);
         g_size = g_dp.st_size;
         read(c->ofd, data, MEDSMAL);
-      }
-      else
-      {
+      } else {
         sprintf(data,"<body><font size=+4><B>404</B></font><hr color=black><blockquote><font size=+3>Document not found</font><br><font size=+2>Unable to find %s</font><br><br><a href=http://qaa.ath.cx/apac.html>Apac</a> Server %s</blockquote>",args[1],VERSION);
       }
     }
   }
+
   if(!g_size&&!data[0]&&msg!=NOT_MODIFIED)  //Nothing has been written
   {
     sprintf(data,
@@ -830,75 +796,61 @@ iscgi=0;
     g_retvals[msg].error,
     g_retvals[msg].message);
 
-  for(place = 0; g_head[place]; place++)
-  {  
-    if(iscgi)
-    {  
-      if(place==LMOD || place==CONT)
-      {
+  for(place = 0; g_head[place]; place++) {  
+    if(iscgi) {  
+      if(place==LMOD || place==CONT) {
+        continue;
+      }
+    } else {
+      if(place==CACH) {
         continue;
       }
     }
-    else
-    {
-      if(place==CACH)
-      {
+
+    if(!c->ofd) {
+      if(place==LMOD) {
         continue;
       }
     }
-    if(!c->ofd)
-    {
-      if(place==LMOD)
-      {
-        continue;
-      }
-    }
+
     sprintf(header,
       "%s\r\n%s: %s",
       header,
       g_head[place], 
       getdata(place,g_dp,data,c));
   }
-  if(msg==MOVED)
-  {
+
+  if(msg==MOVED) {
     sprintf(header,"%s\r\nLocation: %s/",header,args[1]);
   }
 
   strcat(header,"\r\n");
-  if(!iscgi)
-  {
+  if(!iscgi) {
     strcat(header,"\r\n");
   }
 // End of header
-  if(!safewrite(c,header,strlen(header)))
-  {
+  if(!safewrite(c,header,strlen(header))) {
     return 0;
   }
+
   c->state|=WRITING;  //Need to write data
 
-  if(g_size)
-  {
-    if(g_size >= MEDSMAL)
-    {
+  if(g_size) {
+    if(g_size >= MEDSMAL) {
       itmp=MEDSMAL;
+    } else {
+      itmp=g_size;
     }
-    else
-    {
-             itmp=g_size;
-    }
-//This is needed for directory listings
-  }
-  else
-  {
+  //This is needed for directory listings
+  } else {
     itmp=strlen(data);
   }
-//This violates the keep-alive default of HTTP/1.1
+  //This violates the keep-alive default of HTTP/1.1
   safewrite(c,data,itmp);
   return(fin);
 }
 
-int process(connection*c, char*in)
-{
+int process(connection*c, char*in) {
   int   chr=0;
 
   msg=0;
@@ -928,56 +880,44 @@ int process(connection*c, char*in)
 
   g_hptr = (char*)g_http[(int)c->version];
 
-  for(chr=0;g_chead[chr].name;chr++)
-  {
+  for(chr=0;g_chead[chr].name;chr++) {
     g_chead[chr].value=0;
   }
   tp = g_tok;
 
 
-  while(*tp)
-  {
-    for(chr = 0;g_chead[chr].name;chr++)
-    {
-      if(!g_chead[chr].value)
-      {
-        if(isa(g_chead[chr].name))
-        {
+  while(*tp) {
+    for(chr = 0;g_chead[chr].name;chr++) {
+      if(!g_chead[chr].value) {
+        if(isa(g_chead[chr].name)) {
+
           g_chead[chr].value = *(tp + 1);
-          while(*++tp&&**tp!='\n')
-          {
-            if(tp[0][0] > ' ') 
-            {
+          while(*++tp&&**tp!='\n') {
+            if(tp[0][0] > ' ') {
               *((*tp)-1) = ' ';
             }
           }
+          
           break;
         }
       }
     }
-    if(*tp)
-    {
+    if(*tp) {
       tp++;
     }
   }
-  if(g_chead[C_CONN].value)
-  {  
-    if(g_chead[C_KEEP].value)
-    {  
-      if((c->timeout = atoi(g_chead[C_KEEP].value)) > g_maxtimeout)
-      {
+  if(g_chead[C_CONN].value) {  
+    if(g_chead[C_KEEP].value) {  
+      if((c->timeout = atoi(g_chead[C_KEEP].value)) > g_maxtimeout) {
         c->timeout = g_maxtimeout;
       }
-    } 
-    else
-    {
+    } else {
       c->timeout=10;
     }
   }
 
 // Virtual hosts
-  if(g_chead[C_HOST].value)
-  {
+  if(g_chead[C_HOST].value) {
     setvhost(g_chead[C_HOST].value);
   }
 
@@ -988,35 +928,26 @@ int process(connection*c, char*in)
 // Continuation 
 //  Apparrently the RFC specifies:
 //  units=start-<end>
-  if(g_chead[C_RANG].value)
-  {  
+  if(g_chead[C_RANG].value) {  
     long bytelength=0; //For the units
     char*ptr = 0;
     ptr=(char*)g_chead[C_RANG].value;  //Beginning of value
 
-    for(chr = 0; g_sizeunits[chr] != (char*)EOD; chr++)
-    {  
-      if(!strncmp(ptr, g_sizeunits[chr], strlen(g_sizeunits[chr])))
-      {
+    for(chr = 0; g_sizeunits[chr] != (char*)EOD; chr++) {  
+      if(!strncmp(ptr, g_sizeunits[chr], strlen(g_sizeunits[chr]))) {
         break;
       }
     }
 
 // Determine the units
-    if(g_sizeunits[chr] == (char*)EOD)  //Got to the end
-    {  
+    if(g_sizeunits[chr] == (char*)EOD) { //Got to the end
       bytelength = 1;  //Assume 1
     }
-    else
-    {  ptr += strlen(g_sizeunits[chr]);
-      if(chr<6)
-      {
+    else {  ptr += strlen(g_sizeunits[chr]);
+      if(chr<6) {
         bytelength = (1 << (10 * chr));
-      }
-      else
-      {
-        switch(chr)
-        {
+      } else {
+        switch(chr) {
           case 7:
           case 8:
             bytelength=0;  //Symbolizing bits
@@ -1032,38 +963,35 @@ int process(connection*c, char*in)
     if(*ptr!='=')//This is a problem
     {
     }
-    else
-    {
+    else {
       ptr++;
 
-      while(ISANUM(*ptr))
-      {
+      while(ISANUM(*ptr)) {
         c->rstart*=10;
         c->rstart+=*ptr-'0';
         ptr++;
       }
+
       c->rstart--;
       if(*ptr!='-')//This is less of a critical error
       {
       }
-      else
-      {
+      else {
         ptr++;
 
-        while(ISANUM(*ptr))
-        {  
+        while(ISANUM(*ptr)) {  
           c->rend*=10;
           c->rend+=*ptr-'0';
           ptr++;
         }
       }
     }
-    if(!bytelength)//it's in bits
-    {  
+
+    //it's in bits
+    if(!bytelength) {  
       c->rstart=c->rstart<<3;
       c->rend=c->rend<<3;
-    }else
-    {  
+    }else {  
       c->rstart*=bytelength;
       c->rend*=bytelength;
     }
@@ -1071,8 +999,7 @@ int process(connection*c, char*in)
     c->rstart++;
   }
 // Writes to the log
-  if(curvhost->uselog)
-  {   
+  if(curvhost->uselog) {   
     fprintf(curvhost->flog,"%s|%s|%s|%s|\n",
 #ifdef _SunOS
       "N/S",
@@ -1130,13 +1057,13 @@ char setup_vhost(char*tosetup) {
   g_vlast++;
 
   // Ran out of space, realloc
-  if(g_vlast == g_vhostsize)
-  {
+  if(g_vlast == g_vhostsize) {
     // Double size
     g_vhostsize *= 2;
     vhostdb = mrealloc(vhostdb, g_vhostsize * sizeof(vhost));
     memset(vhostdb + g_vlast * sizeof(vhost), 0, g_vlast * sizeof(vhost));  
   }
+  
   parse(&localbuf, &localtok);
   tp = localtok;
 
@@ -1200,7 +1127,7 @@ char setup_vhost(char*tosetup) {
   g_vlast++;
 
   //Ran out of space, realloc
-  if(g_vlast == g_vhostsize)  {    
+  if(g_vlast == g_vhostsize) {
     // Double size
     g_vhostsize *= 2;
     vhostdb = mrealloc(vhostdb, g_vhostsize * sizeof(vhost));
@@ -1254,66 +1181,64 @@ char read_config() {
   tp = g_tok;
   g_maxcon = 1;
 
-  while(*tp)
-  {  
-    if(isa("vhost"))
-    {
+  while(*tp) {  
+    if(isa("vhost")) {
       stp = tp;  //Saves tp
       setup_vhost(*++tp);
       curvhost = &vhostdb[0];  //Reset vhost to top level
       tp = ++stp;
     }
-    if(isa("port"))
-    {
+
+    if(isa("port")) {
       g_port = atoi(*++tp);
     }
-    if(isa("maxcon"))
-    {
+
+    if(isa("maxcon")) {
       g_maxcon = atoi(*++tp);
     }
-    if(isa("uselog"))
-    {
+
+    if(isa("uselog")) {
       curvhost->uselog = ATOB(tp);
     }
-    if(isa("showdirs"))
-    {
+
+    if(isa("showdirs")) {
       curvhost->showdirs = ATOB(tp);
     }
-    if(isa("dowait"))
-    {
+
+    if(isa("dowait")) {
       g_dowait = ATOB(tp);
     }
-    if(isa("docroot"))
-    {
+
+    if(isa("docroot")) {
       ISACODE(curvhost->docroot, globit(*tp));
     }
-    if(isa("mimes"))
-    {
+
+    if(isa("mimes")) {
       ISACODE(g_fmime, globit(*tp));
     }
-    if(isa("logfile"))
-    {
+
+    if(isa("logfile")) {
       ISACODE(curvhost->logfile, globit(*tp));
     }
-    if(isa("default"))
-    {
+
+    if(isa("default")) {
       ISACODE(curvhost->dfault, *tp);
     }
-    if(isa("error"))
-    {
+
+    if(isa("error")) {
       ISACODE(curvhost->error, *tp);
     }
-    if(*tp && **tp == '#')
-    {
-      while(tp[0] && tp[0][0] != '\n')
-      {
+
+    if(*tp && **tp == '#') {
+      while(tp[0] && tp[0][0] != '\n') {
         tp++;
       }
-      if(!tp[0])
-      {
+
+      if(!tp[0]) {
         break;
       }
     }
+
     tp++;
   }
 
@@ -1321,10 +1246,8 @@ char read_config() {
   memset(g_connections, 0, g_maxcon * sizeof(connection));
   g_cend = g_connections + g_maxcon * sizeof(connection);
 
-  if(curvhost->uselog)
-  {
-    if((curvhost->flog = fopen(curvhost->logfile,"a")) == 0)
-    {
+  if(curvhost->uselog) {
+    if((curvhost->flog = fopen(curvhost->logfile,"a")) == 0) {
       printf("Can't open logfile %s, not logging!\n", curvhost->logfile);
       curvhost->uselog = 0;
     }
@@ -1346,8 +1269,7 @@ int main(int argc,char*argv[]) {
 
   PUSHARG
   while(argc>0) {
-    if(argv[0][1] == '-')
-    {
+    if(argv[0][1] == '-') {
       pos = 2;
     } else {
       pos = 1;
